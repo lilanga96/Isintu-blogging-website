@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { supabase } from './apiService'; // Adjust the path if needed
+import { supabase } from './apiService'; 
 
 const Settings = () => {
   const [followers, setFollowers] = useState([]);
@@ -8,17 +8,17 @@ const Settings = () => {
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        // Get the current logged-in admin
+       
         const { data: user, error: userError } = await supabase.auth.getUser();
         if (userError || !user || !user.user || !user.user.id) {
           throw new Error('User not found');
         }
 
-        // Fetch followers of the admin
+       
         const { data, error } = await supabase
-          .from('followers') // Replace with your actual table name
+          .from('followers') 
           .select('id')
-          .eq('followed_id', user.user.id); // Ensure you have a column that links followers to the admin
+          .eq('followed_id', user.user.id);
 
         if (error) throw error;
 
@@ -33,9 +33,9 @@ const Settings = () => {
 
   const handleBlockFollower = async (follower_id) => {
     try {
-      // Block the follower (remove from followers list)
+     
       const { error } = await supabase
-        .from('followers') // Replace with your actual table name
+        .from('followers') 
         .delete()
         .eq('id', follower_id);
 

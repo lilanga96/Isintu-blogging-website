@@ -1,28 +1,28 @@
-import React, { useContext, useEffect , useState} from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { PostsContext } from './PostsContext';
 import PostItem from './PostItem';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
-import { supabase } from './apiService'; 
-import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from './apiService';
 
 const UserDashboard = () => {
   const navigation = useNavigation();
   const { posts, setPosts } = useContext(PostsContext);
   const [admin, setAdmin] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
-    // Fetch the admin data (Isintu Siyabukwa) based on username or email
+   
     const fetchAdmin = async () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('full_name', 'siphesihle')
+          .eq('full_name', 'Siphesihle')
           .single();
-          
+
         if (error) throw error;
         setAdmin(data);
       } catch (error) {
@@ -33,75 +33,100 @@ const UserDashboard = () => {
     fetchAdmin();
   }, []);
 
-  const handleFollow = async () => {
-    try {
-      // Fetch the current session/user details asynchronously
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-      if (userError || !user) {
-        Alert.alert('Error', 'User not found. Please log in.');
-        return;
-      }
-  
-      if (!admin) {
-        Alert.alert('Error', 'Admin not found.');
-        return;
-      }
-  
-      console.log('User ID:', user.id);
-      console.log('Admin ID:', admin.id);
-  
-      const { data, error } = await supabase
-        .from('followers')
-        .insert([{ follower_id: user.id, followed_id: admin.id }]);
-  
-      if (error) {
-        console.error('Supabase Error:', error.message);
-        throw error;
-      }
-  
-      Alert.alert('Success', 'You are now following Isintu Siyabukwa');
-    } catch (error) {
-      console.error('Error:', error.message);
-      Alert.alert('Error', 'Failed to follow admin');
-    }
-  };
-  
-  
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchPosts();
-    }, [])
-  );
-
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .rpc('fetch_posts_with_comments_and_likes_count');
-    
+
       if (error) {
         console.error('Error fetching posts:', error);
         throw error;
       }
-    
-      console.log('Fetched posts:', data);
+
       setPosts(data);
     } catch (error) {
       console.error('Error fetching posts:', error);
       Alert.alert('Error', 'Failed to fetch posts');
     }
-  };
-  
-  useEffect(() => {
-    fetchPosts(); // Call the fetchPosts function here
+  }, [setPosts]);
+
+  const fetchUnreadNotifications = useCallback(async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not found. Please log in.');
+
+     
+      const { data: unreadNotificationsData, error: unreadError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'unread');
+
+      if (unreadError) throw unreadError;
+
+      setUnreadNotifications(unreadNotificationsData.length);
+    } catch (error) {
+      console.error('Error fetching unread notifications:', error.message);
+    }
   }, []);
-  const renderPost = ({ item, index }) => {
-    return <PostItem post={item} index={index} />;
+
+  const markNotificationsAsRead = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not found. Please log in.');
+
+      
+      const { error: updateError } = await supabase
+        .from('notifications')
+        .update({ status: 'read' })
+        .eq('user_id', user.id)
+        .eq('status', 'unread');
+
+      if (updateError) throw updateError;
+    } catch (error) {
+      console.error('Error marking notifications as read:', error.message);
+    }
   };
 
-  
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts();
+      fetchUnreadNotifications();
+    }, [fetchPosts, fetchUnreadNotifications])
+  );
 
+  const handleFollow = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not found. Please log in.');
+      if (!admin) throw new Error('Admin not found.');
+
+      
+      const { data: existingFollow, error: followError } = await supabase
+        .from('followers')
+        .select('*')
+        .eq('follower_id', user.id)
+        .eq('followed_id', admin.id)
+        .single();
+
+      if (followError && followError.code !== 'PGRST116') throw followError;
+      if (existingFollow) {
+        Alert.alert('Already Following', 'You are already following the admin.');
+        return;
+      }
+
+     
+      const { error } = await supabase
+        .from('followers')
+        .insert([{ follower_id: user.id, followed_id: admin.id }]);
+
+      if (error) throw error;
+      Alert.alert('Success', 'You are now following Isintu Siyabukwa');
+    } catch (error) {
+      console.error('Error:', error.message);
+      Alert.alert('Error', error.message || 'Failed to follow admin');
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -110,10 +135,19 @@ const UserDashboard = () => {
         throw error;
       }
       Alert.alert('Logged Out', 'You have been successfully logged out.');
-      navigation.navigate('Login'); 
+      navigation.navigate('Login');
     } catch (error) {
       Alert.alert('Logout Failed', error.message);
     }
+  };
+
+  const handleNotificationsPress = () => {
+    navigation.navigate('Notifications');
+    markNotificationsAsRead();
+  };
+
+  const renderPost = ({ item, index }) => {
+    return <PostItem post={item} index={index} />;
   };
 
   return (
@@ -145,42 +179,45 @@ const UserDashboard = () => {
             </MenuOption>
           </MenuOptions>
         </Menu>
-        
       </View>
 
       <View style={styles.iconContainer}>
-  <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
-    <Icon name="home" size={30} color="#800000" />
-    <Text style={styles.iconText}>Home</Text>
-  </TouchableOpacity>
-  
-  
-  
-  <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Notifications')}>
-    <Icon name="bell" size={28} color="#800000" />
-    <Text style={styles.iconText}>Notifications</Text>
-  </TouchableOpacity>
-  <TouchableOpacity style={styles.iconButton} onPress={handleFollow}>
-    <Icon name="user-plus" size={28} color="#800000" />
-    <Text style={styles.iconText}>Follow Isintu</Text>
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
+          <Icon name="home" size={30} color="#800000" />
+          <Text style={styles.iconText}>Home</Text>
+        </TouchableOpacity>
 
-    
-       
-    
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={handleNotificationsPress}
+        >
+          <Icon name="bell" size={28} color="#800000" />
+          {unreadNotifications > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationText}>{unreadNotifications}</Text>
+            </View>
+          )}
+          <Text style={styles.iconText}>Notifications</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.iconButton} onPress={handleFollow}>
+          <Icon name="user-plus" size={28} color="#800000" />
+          <Text style={styles.iconText}>Follow Isintu</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.newPostButtonContainer}>
         <TouchableOpacity style={styles.newPostButton} onPress={() => navigation.navigate('NewPost')}>
           <Text style={styles.newPostButtonText}>Write a New Post</Text>
         </TouchableOpacity>
       </View>
-      
+
       <FlatList
         data={posts}
         renderItem={renderPost}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.postsContainer}
+        style={{ width: '100%' }}
       />
     </View>
   );
@@ -203,7 +240,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 25,
     borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC'
+    borderBottomColor: '#CCCCCC',
   },
   headerText: {
     fontSize: 24,
@@ -228,6 +265,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#800000',
   },
+  notificationBadge: {
+    position: 'absolute',
+    right: 0,
+    top: -10,
+    backgroundColor: '#800000',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   newPostButtonContainer: {
     width: '80%',
     marginBottom: 20,
@@ -240,32 +293,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newPostButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
+ 
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    padding: 10,
   },
   menuIcon: {
-    marginRight: 2,
+    marginRight: 10,
   },
   menuText: {
-    fontSize: 18,
-    padding: 10,
-    color: '#000',
-  },
-  followButton: {
-    backgroundColor: '#800000',
-    padding: 15,
-    borderRadius: 5,
-  },
-  followButtonText: {
-    color: '#fff',
     fontSize: 16,
+    color: '#800000',
   },
+
+
 });
 
 export default UserDashboard;

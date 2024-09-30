@@ -10,41 +10,72 @@ const NewRequests = () => {
     const fetchPosts = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_pending_posts_with_profiles');
+          .rpc('get_pending_posts_with_profiles'); 
     
         if (error) {
-          console.error('Error fetching posts:', error.message);
-          Alert.alert('Error', `Failed to fetch posts: ${error.message}`);
-          return;
+          console.error('Error fetching posts:', error);
+          throw error;
         }
     
+        console.log('Fetched posts:', data);
         setPosts(data);
       } catch (error) {
-        console.error('Unexpected error:', error);
-        Alert.alert('Error', 'Unexpected error occurred');
+        console.error('Error fetching posts:', error);
+        Alert.alert('Error', 'Failed to fetch posts');
       }
     };
-
+    
     fetchPosts();
   }, []);
 
-  const handleApprove = async (postId) => {
+  const sendNotificationToAllUsers = async (postText) => {
+    try {
+   
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('id');
+
+      if (usersError) throw usersError;
+
+      const notifications = users.map((user) => ({
+        user_id: user.id,
+        message: `New post by Isintu Siyabukwa: ${postText}`,
+        status: 'unread',
+      }));
+
+   
+      const { error: notifyError } = await supabase
+        .from('notifications')
+        .insert(notifications);
+
+      if (notifyError) throw notifyError;
+
+    } catch (error) {
+      console.error('Error sending notifications:', error.message);
+      Alert.alert('Error', 'Failed to send notifications');
+    }
+  };
+
+  const handleApprove = async (postId, postText) => {
     try {
       const { data, error } = await supabase
         .from('posts')
         .update({ status: 'published' })
         .eq('id', postId);
-
+  
       if (error) throw error;
-
-      // Refresh posts list
+  
+      console.log('Update response:', data); 
+      
+      await sendNotificationToAllUsers(postText);
+      
       setPosts(posts.filter(post => post.id !== postId));
       Alert.alert('Success', 'Post approved and published.');
     } catch (error) {
       Alert.alert('Error', 'Failed to approve post');
     }
   };
-
+  
   const handleReject = async (postId) => {
     try {
       const { error } = await supabase
@@ -54,7 +85,7 @@ const NewRequests = () => {
 
       if (error) throw error;
 
-      // Refresh posts list
+     
       setPosts(posts.filter(post => post.id !== postId));
       Alert.alert('Success', 'Post rejected and deleted.');
     } catch (error) {
@@ -71,7 +102,7 @@ const NewRequests = () => {
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => handleApprove(item.id)}
+          onPress={() => handleApprove(item.id, item.text)}
         >
           <Icon name="check" size={20} color="#fff" />
           <Text style={styles.buttonText}>Approve</Text>
@@ -92,7 +123,7 @@ const NewRequests = () => {
       <FlatList
         data={posts}
         renderItem={renderPost}
-        keyExtractor={item => item.id.toString()} // Ensure id is handled as an integer
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.listContainer}
       />
     </View>

@@ -9,25 +9,25 @@ const Profile = () => {
 
   const handleUpdateUsername = async () => {
     try {
-      // Get the current logged-in user
       const { data: user, error: userError } = await supabase.auth.getUser();
       if (userError || !user || !user.user || !user.user.id) {
         throw new Error('User not found');
       }
-
-      // Update the username in the 'profiles' table
+  
+      // Use 'username' state instead of 'full_name'
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name })
+        .update({ full_name: username }) // Updating the 'full_name' field with 'username'
         .eq('id', user.user.id);
-
+  
       if (error) throw error;
-
+  
       Alert.alert('Success', 'Username updated successfully');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
   };
+  
 
   const handleUpdatePassword = async () => {
     try {
@@ -36,7 +36,7 @@ const Profile = () => {
         throw new Error('User not found');
       }
 
-      // Update the password
+    
       const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
 
       if (passwordError) throw passwordError;

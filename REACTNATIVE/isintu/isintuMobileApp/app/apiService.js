@@ -6,7 +6,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const fetchPostLikes = async (postId) => {
-    // Fetch likes
+    
     const { data: likesData, error: likesError } = await supabase
       .from('post_likes')
       .select('user_id')
@@ -19,7 +19,7 @@ export const fetchPostLikes = async (postId) => {
   
     const userIds = likesData.map((like) => like.user_id);
   
-    // Fetch profiles
+  
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name')
@@ -30,7 +30,7 @@ export const fetchPostLikes = async (postId) => {
       return [];
     }
   
-    // Map profiles to the likes
+  
     const profilesMap = new Map(profilesData.map(profile => [profile.id, profile.full_name]));
     const likesWithProfiles = likesData.map(like => ({
       user_id: like.user_id,

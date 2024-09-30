@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "47a7eaf0-877f-46e1-9ddd-4b8ac24bc866"
+      }
+    },
+    "android": {
+      "package": "com.siphesihledyalvane.isintubloggingwebsite"
+    }
+  }
+}

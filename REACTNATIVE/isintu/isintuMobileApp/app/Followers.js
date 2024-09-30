@@ -9,7 +9,7 @@ const Followers = () => {
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        // Get the current logged-in user
+      
         const { data: user, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
     
@@ -18,7 +18,6 @@ const Followers = () => {
           return;
         }
     
-        // Fetch follower IDs
         const { data: followerIds, error: followerError } = await supabase
           .from('followers')
           .select('follower_id')
@@ -34,7 +33,7 @@ const Followers = () => {
 
         const followerIdsArray = followerIds.map(f => f.follower_id);
 
-        // Fetch profiles based on follower IDs
+       
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('full_name, id')
@@ -42,7 +41,7 @@ const Followers = () => {
 
         if (profilesError) throw profilesError;
 
-        // Combine followers and profiles
+       
         const followersWithProfiles = followerIds.map(f => {
           const profile = profiles.find(p => p.id === f.follower_id);
           return {

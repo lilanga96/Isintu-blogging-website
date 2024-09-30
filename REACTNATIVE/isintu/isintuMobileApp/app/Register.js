@@ -16,7 +16,7 @@ const LoginSignupForm = () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
   
-      // Query the profiles table to get the user's role
+     
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -40,7 +40,7 @@ const LoginSignupForm = () => {
 
   const handleSignup = async () => {
     try {
-      // Register the user in Supabase Authentication
+     
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email,
         password: password,
@@ -53,13 +53,13 @@ const LoginSignupForm = () => {
   
       if (authError) throw authError;
   
-      // Insert user details into the profiles table, including the full_name/username
+  
       const { user } = authData;
       const { error: profileError } = await supabase.from('profiles').insert([
         {
-          id: user.id, // Use the UUID from the Auth table
-          role: 'user', // Default role as 'user'
-          full_name: userName, // Include the full_name/username
+          id: user.id, 
+          role: 'user', 
+          full_name: userName, 
         },
       ]);
   

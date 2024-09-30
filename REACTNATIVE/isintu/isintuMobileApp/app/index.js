@@ -77,7 +77,7 @@ const App = () => {
       }
     });
 
-    // Ensure loading state lasts for 4 seconds
+   
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 4000);

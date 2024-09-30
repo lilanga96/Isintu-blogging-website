@@ -14,7 +14,7 @@ const CommentsScreen = ({ route }) => {
   const [newReply, setNewReply] = useState({});
   const [replies, setReplies] = useState({});
 
-  // Fetch the current user's full name
+  
   const fetchUsername = async () => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -34,7 +34,7 @@ const CommentsScreen = ({ route }) => {
     }
   };
 
-  // Fetch existing comments and replies for the post
+
   const fetchCommentsAndReplies = async () => {
     try {
       const { data: commentsData, error: commentsError } = await supabase
@@ -46,7 +46,7 @@ const CommentsScreen = ({ route }) => {
 
       setComments(commentsData);
 
-      // Fetch replies for the comments and replies (nested structure)
+      
       const commentIds = commentsData.map(comment => comment.id);
       const { data: repliesData, error: repliesError } = await supabase
         .from('replies')
@@ -55,7 +55,7 @@ const CommentsScreen = ({ route }) => {
 
       if (repliesError) throw repliesError;
 
-      // Group replies by comment_id or reply_id
+     
       const groupedReplies = repliesData.reduce((acc, reply) => {
         acc[reply.comment_id] = acc[reply.comment_id] || [];
         acc[reply.comment_id].push(reply);
@@ -71,17 +71,17 @@ const CommentsScreen = ({ route }) => {
   const handleAddComment = async () => {
     if (newComment.trim()) {
       try {
-        // Insert the new comment
+       
         const { error } = await supabase
           .from('comments')
           .insert([{ post_id: post.id, user_id: supabase.auth.getUser().id, text: newComment, full_name }]);
 
         if (error) throw error;
 
-        // Clear the input field
+      
         setNewComment('');
 
-        // Fetch updated comments and replies
+        
         fetchCommentsAndReplies();
       } catch (error) {
         console.error('Error adding comment:', error.message);
@@ -93,17 +93,17 @@ const CommentsScreen = ({ route }) => {
     const replyText = parentId ? newReply[parentId] : newReply[commentId];
     if (replyText?.trim()) {
       try {
-        // Insert the new reply
+       
         const { error } = await supabase
           .from('replies')
           .insert([{ comment_id: commentId, user_id: supabase.auth.getUser().id, text: replyText, full_name }]);
 
         if (error) throw error;
 
-        // Clear the input field for the reply
+       
         setNewReply({ ...newReply, [commentId]: '', ...(parentId ? { [parentId]: '' } : {}) });
 
-        // Fetch updated comments and replies
+    
         fetchCommentsAndReplies();
       } catch (error) {
         console.error('Error adding reply:', error.message);
@@ -114,7 +114,7 @@ const CommentsScreen = ({ route }) => {
   const handleLike = async (type, id) => {
     try {
       if (type === 'comment') {
-        // Fetch the current number of likes for the comment
+      
         const { data: commentData, error: fetchError } = await supabase
           .from('comments')
           .select('likes')
@@ -123,10 +123,10 @@ const CommentsScreen = ({ route }) => {
   
         if (fetchError) throw fetchError;
   
-        // Increment the likes count
+      
         const newLikesCount = (commentData?.likes || 0) + 1;
   
-        // Update the comment with the new likes count
+        
         const { error: updateError } = await supabase
           .from('comments')
           .update({ likes: newLikesCount })
@@ -134,7 +134,7 @@ const CommentsScreen = ({ route }) => {
   
         if (updateError) throw updateError;
       } else if (type === 'reply') {
-        // Fetch the current number of likes for the reply
+       
         const { data: replyData, error: fetchError } = await supabase
           .from('replies')
           .select('likes')
@@ -143,10 +143,10 @@ const CommentsScreen = ({ route }) => {
   
         if (fetchError) throw fetchError;
   
-        // Increment the likes count
+       
         const newLikesCount = (replyData?.likes || 0) + 1;
   
-        // Update the reply with the new likes count
+       
         const { error: updateError } = await supabase
           .from('replies')
           .update({ likes: newLikesCount })
@@ -155,7 +155,7 @@ const CommentsScreen = ({ route }) => {
         if (updateError) throw updateError;
       }
   
-      // Fetch updated comments and replies
+     
       fetchCommentsAndReplies();
     } catch (error) {
       console.error('Error liking:', error.message);
@@ -180,7 +180,7 @@ const CommentsScreen = ({ route }) => {
             <Text style={styles.actionText}>Reply</Text>
           </TouchableOpacity>
         </View>
-        {/* Input for replying to a reply */}
+       
         <TextInput
           style={styles.replyInput}
           placeholder="Write a reply..."
@@ -190,7 +190,7 @@ const CommentsScreen = ({ route }) => {
         <TouchableOpacity style={styles.commentButton} onPress={() => handleAddReply(commentId, reply.id)}>
           <Text style={styles.commentButtonText}>Add Reply</Text>
         </TouchableOpacity>
-        {/* Recursive rendering of nested replies */}
+        
         {renderReplies(reply.id)}
       </View>
     ));
@@ -214,9 +214,9 @@ const CommentsScreen = ({ route }) => {
                 <Text style={styles.actionText}>Reply</Text>
               </TouchableOpacity>
             </View>
-            {/* Render replies */}
+           
             {renderReplies(item.id)}
-            {/* Input for adding a reply */}
+            
             <TextInput
               style={styles.replyInput}
               placeholder="Write a reply..."

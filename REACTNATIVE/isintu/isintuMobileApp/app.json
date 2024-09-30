@@ -7,10 +7,9 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
-      
+      "supportsTablet": true,
+      "bundleIdentifier": "com.siphesihledyalvane.isintuMobileApp"
     },
-   
     "web": {
       "bundler": "metro",
       "output": "static"
@@ -20,6 +19,23 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e4a671fa-be24-4518-a861-839e3631b6f9"
+      }
+    },
+    "android": {
+      "package": "com.siphesihledyalvane.isintuMobileApp"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e4a671fa-be24-4518-a861-839e3631b6f9"
     }
   }
 }

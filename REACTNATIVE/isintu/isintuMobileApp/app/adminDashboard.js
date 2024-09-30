@@ -1,17 +1,16 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, FlatList, Text, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { PostsContext } from './PostsContext';
 import PostItem from './PostItem';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
-import { supabase } from './apiService'; // Adjust the path if needed
+import { supabase } from './apiService'; 
 
 const AdminDashboard = () => {
   const navigation = useNavigation();
   const { posts, setPosts } = useContext(PostsContext);
 
-  // Fetch posts function
   const fetchPosts = async () => {
     try {
       const { data, error } = await supabase
@@ -29,11 +28,14 @@ const AdminDashboard = () => {
       Alert.alert('Error', 'Failed to fetch posts');
     }
   };
+
+ 
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts();
+    }, [])
+  );
   
-  useEffect(() => {
-    fetchPosts(); // Call the fetchPosts function here
-  }, []);
-  // Handle logout
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -41,13 +43,12 @@ const AdminDashboard = () => {
         throw error;
       }
       Alert.alert('Logged Out', 'You have been successfully logged out.');
-      navigation.navigate('Login'); // Navigate to the login screen or wherever you want
+      navigation.navigate('Login'); 
     } catch (error) {
       Alert.alert('Logout Failed', error.message);
     }
   };
 
-  // Render each post item
   const renderPost = ({ item, index }) => {
     return <PostItem post={item} index={index} />;
   };
@@ -55,15 +56,14 @@ const AdminDashboard = () => {
   const deletePost = async (postId) => {
     try {
       const { data, error } = await supabase
-        .from('posts') // Adjust the table name if necessary
+        .from('posts') 
         .delete()
         .eq('id', postId);
   
       if (error) {
         throw error;
       }
-  
-      // Filter out the deleted post from the posts state
+
       setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
   
       Alert.alert('Post Deleted', 'The post has been successfully deleted.');
@@ -134,6 +134,7 @@ const AdminDashboard = () => {
         renderItem={renderPost}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.postsContainer}
+        style={{ width: '100%' }}
       />
     </View>
   );
