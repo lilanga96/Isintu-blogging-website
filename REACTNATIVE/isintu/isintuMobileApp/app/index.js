@@ -16,7 +16,7 @@ import { supabase } from './apiService';
 import Notifications from './Notifications';
 import LikesScreen from './LikesScreen';
 import { UserProvider } from './userContext';
-;
+import LiveStream from './liveStream';
 
 const Stack = createStackNavigator();
 
@@ -125,6 +125,7 @@ const App = () => {
                   <Stack.Screen name="Settings" component={Settings} />
                   <Stack.Screen name="NewPost" component={NewPost} />
                   <Stack.Screen name="Profile" component={Profile} />
+                  <Stack.Screen name="livestream" component={LiveStream} />
                   <Stack.Screen name="Comments" component={CommentsScreen} />
                   <Stack.Screen name="LikesScreen" component={LikesScreen} />
                   <Stack.Screen 
